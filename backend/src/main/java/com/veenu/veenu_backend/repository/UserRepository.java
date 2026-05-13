@@ -8,7 +8,7 @@ import javax.swing.text.html.Option;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository {
+public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
