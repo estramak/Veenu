@@ -1,7 +1,9 @@
 package com.veenu.veenu_backend.controller;
 
-import com.veenu.veenu_backend.model.Listing;
+import com.veenu.veenu_backend.dto.ListingRequest;
+import com.veenu.veenu_backend.dto.ListingResponse;
 import com.veenu.veenu_backend.service.ListingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +19,7 @@ public class ListingController {
 
     // GET /api/listings?lat=&lon=&radius=
     @GetMapping
-    public List<Listing> getListingsInRadius(
+    public List<ListingResponse> getListingsInRadius(
             @RequestParam double lat,
             @RequestParam double lon,
             @RequestParam(defaultValue = "10") double radius) {
@@ -26,7 +28,7 @@ public class ListingController {
 
     // GET /api/listings/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
+    public ResponseEntity<ListingResponse> getListingById(@PathVariable Long id) {
         return listingService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -34,17 +36,16 @@ public class ListingController {
 
     // POST /api/listings
     @PostMapping
-    public ResponseEntity<Listing> createListing(@RequestBody Listing listing) {
-        Listing created = listingService.createListing(listing);
-        return ResponseEntity.ok(created);
+    public ResponseEntity<ListingResponse> createListing(@Valid @RequestBody ListingRequest request) {
+        return ResponseEntity.ok(listingService.createListing(request));
     }
 
     // PUT /api/listings/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Listing> updateListing(
+    public ResponseEntity<ListingResponse> updateListing(
             @PathVariable Long id,
-            @RequestBody Listing updated) {
-        return listingService.updateListing(id, updated)
+            @Valid @RequestBody ListingRequest request) {
+        return listingService.updateListing(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -58,14 +59,14 @@ public class ListingController {
 
     // Admin endpoints
     @PostMapping("/{id}/suspend")
-    public ResponseEntity<Listing> suspendListing(@PathVariable Long id) {
+    public ResponseEntity<ListingResponse> suspendListing(@PathVariable Long id) {
         return listingService.suspendListing(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/request-changes")
-    public ResponseEntity<Listing> requestChanges(@PathVariable Long id) {
+    public ResponseEntity<ListingResponse> requestChanges(@PathVariable Long id) {
         return listingService.requestChanges(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
