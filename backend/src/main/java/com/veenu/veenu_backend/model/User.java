@@ -19,6 +19,14 @@ public class User {
     @Column(nullable = false)
     private String displayName;
 
+    @Column(nullable = false, unique = true)
+    private String username;
+
+    @Column(nullable = false)
+    private String passwordHash;
+
+    private Boolean emailVerified = false;
+
     private String neighborhood;
 
     @Enumerated(EnumType.STRING)
