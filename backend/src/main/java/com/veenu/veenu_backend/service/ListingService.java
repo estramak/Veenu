@@ -21,7 +21,7 @@ public class ListingService {
     }
 
     //Get a single listing by ID
-    public Optional<Listing> findByID(Long id) {
+    public Optional<Listing> findById(Long id) {
         return listingRepository.findById(id);
     }
 
