@@ -51,6 +51,7 @@ public class SecurityConfig {
                         // Public GET endpoints
                         .requestMatchers(HttpMethod.GET, "/api/listings").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/listings/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/business/**").permitAll()
                         // Auth endpoints
                         .requestMatchers("/auth/**").permitAll()
                         // Everything else requires authentication
