@@ -39,3 +39,9 @@ build/
 ### H2 database files ###
 *.mv.db
 *.trace.db
+
+
+
+node_modules/
+*.mv.db
+*.trace.db
