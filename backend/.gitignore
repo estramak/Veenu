@@ -45,3 +45,4 @@ build/
 node_modules/
 *.mv.db
 *.trace.db
+application-local.properties
