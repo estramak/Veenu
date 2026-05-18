@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket getBucket(String ip) {
@@ -54,6 +53,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/business/**").permitAll()
                         // Auth endpoints
                         .requestMatchers("/auth/**").permitAll()
+                        // Admin-only endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/listings/*/suspend").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/listings/*/request-changes").hasRole("ADMIN")
                         // Everything else requires authentication
                         .anyRequest().authenticated()
                 )
@@ -85,7 +87,7 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
