@@ -124,7 +124,7 @@ public class AuthService {
         Resend resend = new Resend(resendApiKey);
         CreateEmailOptions emailOptions = CreateEmailOptions.builder()
                 .from("onboarding@resend.dev")
-                .to("defaul89@gmail.com")
+                .to(email)
                 .subject("Verify your Veenu account")
                 .html("<h2>Welcome to Veenu</h2>" +
                         "<p>Click the link below to verify your email address.</p>" +
