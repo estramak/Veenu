@@ -3,6 +3,7 @@ package com.veenu.veenu_backend.controller;
 import com.veenu.veenu_backend.dto.UserResponse;
 import com.veenu.veenu_backend.dto.UserUpdateRequest;
 import com.veenu.veenu_backend.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class UserController {
     // PUT /api/users/me — update current user profile
     @PutMapping("/me")
     public ResponseEntity<UserResponse> updateCurrentUser(
-            @RequestBody UserUpdateRequest request) {
+            @Valid @RequestBody UserUpdateRequest request) {
         return ResponseEntity.ok(userService.updateCurrentUser(request));
     }
 }
