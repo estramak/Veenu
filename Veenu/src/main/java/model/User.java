@@ -45,8 +45,6 @@ public class User {
     @Column(nullable = false)
     private UserStatus userStatus = UserStatus.ACTIVE;
 
-
-
     private LocalDateTime createdAt;
 
     @PrePersist
