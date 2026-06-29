@@ -1,6 +1,6 @@
 package model.enums;
 
-public enum UserStatus {
+public enum EntityStatus {
     ACTIVE,             //default on creation
     SUSPENDED,          //temporary, correctable
     CHANGES_REQUESTED,  //email sent, user notified of required corrections
