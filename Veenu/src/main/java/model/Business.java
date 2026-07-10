@@ -3,6 +3,7 @@ package model;
 import jakarta.persistence.*;
 import model.enums.EntityStatus;
 import model.enums.UserRole;
+import repositories.BusinessRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,10 @@ public class Business {
     private List<BusinessHours> hours = new ArrayList<>();
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BusinessHoursOverride> hoursOverrides = new ArrayList<>();
+
+
+    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BusinessUser> businessUsers = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
