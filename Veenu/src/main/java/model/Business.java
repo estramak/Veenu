@@ -31,7 +31,6 @@ public class Business {
     //separate tables, cover regular business hours, and when they change due to holidays or one off changes
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BusinessHours> hours = new ArrayList<>();
-
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BusinessHoursOverride> hoursOverrides = new ArrayList<>();
 

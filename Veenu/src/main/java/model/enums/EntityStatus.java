@@ -1,3 +1,5 @@
+/*
+* Used to reference status of businesses, users, */
 package model.enums;
 
 public enum EntityStatus {

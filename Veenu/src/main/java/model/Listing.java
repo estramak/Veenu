@@ -72,8 +72,4 @@ public class Listing {
 
     @PrePersist
     protected void onUpdate() { updatedAt = LocalDateTime.now(); }
-
-
-
-
 }

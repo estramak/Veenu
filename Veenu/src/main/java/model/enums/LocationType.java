@@ -1,3 +1,6 @@
+/*
+* Referenced in Listing class, acts as type label for each location on the map
+*/
 package model.enums;
 
 public enum LocationType {
