@@ -66,8 +66,10 @@ public class Listing {
     @Column(nullable = false)
     private EntityStatus entityStatus = EntityStatus.ACTIVE;
 
+    @Column(nullable = false)
     private Boolean isActive = true;
 
+    @Column(nullable = false)
     private Boolean hasDistinctName = false;
 
     private LocalDateTime createdAt;
@@ -77,6 +79,6 @@ public class Listing {
 
     private LocalDateTime updatedAt;
 
-    @PrePersist
+    @PreUpdate
     protected void onUpdate() { updatedAt = LocalDateTime.now(); }
 }
