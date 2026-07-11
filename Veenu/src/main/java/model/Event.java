@@ -26,8 +26,9 @@ public class Event {
     @JoinColumn(name = "listing_id", nullable = false)
     private Listing listing;
 
-    @Column(name = "business_id")
-    private Long businessId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "business_id", nullable = true)
+    private Business businessId;
 
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
