@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import model.enums.EntityStatus;
 import model.enums.UserRole;
-import model.enums.EntityStatus;
 
 import java.time.LocalDateTime;
 
@@ -44,7 +43,6 @@ public class User {
     @Column(nullable = false)
     private EntityStatus entityStatus = EntityStatus.ACTIVE;
 
-    @Column(nullable = false)
     private String suspensionReason;
 
     private LocalDateTime createdAt;
