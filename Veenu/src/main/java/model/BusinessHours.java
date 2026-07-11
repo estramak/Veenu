@@ -1,14 +1,25 @@
 package model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
 @Table(name = "business_hours")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 public class BusinessHours {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

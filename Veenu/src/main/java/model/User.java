@@ -1,7 +1,7 @@
 package model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import model.enums.EntityStatus;
 import model.enums.UserRole;
 import model.enums.EntityStatus;
@@ -9,12 +9,19 @@ import model.enums.EntityStatus;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @Column(nullable = false, unique = true)

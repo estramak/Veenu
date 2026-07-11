@@ -2,22 +2,29 @@ package model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.*;
 import model.enums.EntityStatus;
 import model.enums.LocationType;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 @Table(name = "listing", indexes = {
         @Index(name = "idx_listing_lat", columnList = "latitude"),
         @Index(name = "idx_listing_lon", columnList = "longitude")
         })
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 public class Listing {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @Column(nullable = false)

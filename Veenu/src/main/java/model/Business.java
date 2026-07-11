@@ -1,6 +1,7 @@
 package model;
 
 import jakarta.persistence.*;
+import lombok.*;
 import model.enums.EntityStatus;
 import model.enums.UserRole;
 import repositories.BusinessRepository;
@@ -10,10 +11,18 @@ import java.util.List;
 
 @Entity
 @Table(name = "business")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 public class Business {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
