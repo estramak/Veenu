@@ -22,6 +22,12 @@ public class Event {
     @ToString.Include
     private Long id;
 
+    @Column(nullable = false)
+    private String name;
+
+    @Column(length = 1000)
+    private String description;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "listing_id", nullable = false)
     private Listing listing;
@@ -42,4 +48,10 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
     private User creator;
+
+    @Column(nullable = false)
+    private Boolean atBusiness = false;
+
+    @Column(nullable = false)
+    private Boolean postedByOwner = false;
 }
