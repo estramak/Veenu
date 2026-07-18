@@ -28,7 +28,7 @@ public class Event {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id", nullable = true)
-    private Business businessId;
+    private Business business;
 
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;

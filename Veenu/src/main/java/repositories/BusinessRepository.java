@@ -19,7 +19,7 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     Optional<Business> findByEmail(String email);
     boolean existsByEmail(String email);
     Optional<Business> findByPhone(String phone);
-    boolean existByPhone(String phone);
+    boolean existsByPhone(String phone);
     Optional<Business> findByWebsite(String website);
     boolean existsByWebsite(String website);
 
@@ -40,7 +40,7 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     List<Business> findByIsVerifiedTrue();
 
     //businesses flagged with a suspension reason
-    @Query("SELECT b FROM Business WHERE b.EntityStatus = 'ACTIVE'")
+    @Query("SELECT b FROM Business b WHERE b.entityStatus = 'ACTIVE'")
     List<Business> findAllActive();
 
     List<Business> findBySuspensionReasonIsNotNull();
