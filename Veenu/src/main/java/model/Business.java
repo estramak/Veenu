@@ -29,6 +29,20 @@ public class Business {
     @JoinColumn(name = "listing_id", nullable = false)
     private Listing listing;
 
+    //separate tables, cover regular business hours, and when they change due to holidays or one off changes
+    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BusinessHours> hours = new ArrayList<>();
+    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BusinessHoursOverride> hoursOverrides = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submitted_by_user_id", nullable = false)
+    private User submittedBy;
+
+
+    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BusinessUser> businessUsers = new ArrayList<>();
+
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -37,16 +51,6 @@ public class Business {
 
     @Column(nullable = true, unique = true)
     private String website;
-
-    //separate tables, cover regular business hours, and when they change due to holidays or one off changes
-    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BusinessHours> hours = new ArrayList<>();
-    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BusinessHoursOverride> hoursOverrides = new ArrayList<>();
-
-
-    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BusinessUser> businessUsers = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -57,4 +61,7 @@ public class Business {
 
     @Column(nullable = false)
     private String suspensionReason;
+
+    @Column(nullable = false)
+    private Boolean flaggedForReview = false;
 }
