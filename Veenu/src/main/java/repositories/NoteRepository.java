@@ -16,7 +16,10 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     List<Note> findByAuthor_Id(Long authorId);
 
     //mod queue
-    List<Note> findByHoldTrue();
+    List<Note> findByOnHoldTrue();
 
     long countByOnHoldTrue();
+
+    // feed, events+notes
+    List<Note> findByOnHoldFalseOrderByCreatedAtDesc();
 }

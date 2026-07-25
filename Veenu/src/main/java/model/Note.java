@@ -26,7 +26,7 @@ public class Note {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = true)
+    @JoinColumn(name = "listing_id", nullable = true)
     private Listing listing;
 
     @ManyToOne(fetch = FetchType.LAZY)
