@@ -76,6 +76,45 @@ public class NoteService {
 
     }
 
+    // public read
+    public List<NoteResponseDto> getNotesForListing(Long listingId) {
+        return noteRepository.findByListing_Id(listingId).stream()
+                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()))
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .map(this::toResponseDto)
+                .toList();
+    }
+
+    public List<NoteResponseDto> getNotesForEvent(Long eventId) {
+        return noteRepository.findByEvent_Id(eventId).stream()
+                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()))
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .map(this::toResponseDto)
+                .toList();
+    }
+
+    //combined view for notes and events
+    public List<NoteResponseDto> getNotesForEventPage(Long listingId, Long eventId, String filter) {
+        List<Note> notes;
+        if ("listing".equalsIgnoreCase(filter)) {
+            notes = listingId != null ? noteRepository.findByListing_Id(listingId) : List.of();
+        } else if ("event".equalsIgnoreCase(filter)) {
+            notes = listingId != null ? noteRepository.findByEvent_Id(eventId) : List.of();
+        } else {
+            List<Note> listingNotes = listingId != null ? noteRepository.findByListing_Id(listingId) : List.of();
+            List<Note> eventNotes = eventId != null ? noteRepository.findByEvent_Id(eventId) : List.of();
+
+            notes = new java.util.ArrayList<>(listingNotes.size() + eventNotes.size());
+            notes.addAll(listingNotes);
+            notes.addAll(eventNotes);
+        }
+        return notes.stream()
+                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()))
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .map(this::toResponseDto)
+                .toList();
+    }
+
     public NoteResponseDto updateNote(Long noteId, Long requestingUserId, UpdateNoteRequestDto request) {
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));

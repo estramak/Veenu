@@ -44,6 +44,8 @@ public class SecurityConfig {
                         // Public
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/listings/nearby", "/api/listings/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/notes/listing/*", "/api/notes/event/*", "/api/notes/event/*/combined").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/feed").permitAll()
                         .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/h2-console")).permitAll()
                         .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/h2-console/**")).permitAll()
 
