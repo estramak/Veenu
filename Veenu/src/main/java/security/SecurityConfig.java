@@ -2,6 +2,7 @@ package security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -48,6 +49,7 @@ public class SecurityConfig {
 
                         // Admin-only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/business/*/report").authenticated()
 
                         // Business-role required
                         .requestMatchers("/api/dashboard/**", "/api/business/**").hasRole("BUSINESS")

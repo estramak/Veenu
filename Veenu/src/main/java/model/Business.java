@@ -59,7 +59,7 @@ public class Business {
     @Column(nullable = false)
     private Boolean isVerified = false;
 
-    @Column(nullable = false)
+    @Column(length = 500)
     private String suspensionReason;
 
     @Column(nullable = false)

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -18,7 +19,7 @@ public class EventResponseDto {
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
     private Boolean isFree;
-    private Double price;
+    private BigDecimal price;
     private Integer capacity;
     private String registrationUrl;
     private Boolean postedByOwner;

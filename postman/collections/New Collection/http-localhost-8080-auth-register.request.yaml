@@ -1,0 +1,19 @@
+$kind: http-request
+name: http://localhost:8080/auth/register
+description: ""
+url: http://localhost:8080/auth/register
+method: POST
+body:
+  type: json
+  content: "\r
+
+    [\r
+
+    \  { \"username\": \"reporter1\", \"email\": \"reporter1@example.com\", \"password\": \"Password1!\", \"displayName\": \"Reporter1\", \"neighborhood\": \"Richland\" },\r
+
+    \  { \"username\": \"reporter2\", \"email\": \"reporter2@example.com\",\"password\": \"Password2!\", \"displayName\": \"Reporter2\", \"neighborhood\": \"Kennewick\" },\r
+
+    \  { \"username\": \"reporter3\", \"email\": \"reporter3@example.com\", \"password\": \"Password3!\", \"displayName\": \"Reporter3\", \"neighborhood\": \"Pasco\" }\r
+
+    ]\r\n"
+order: 1784936142219

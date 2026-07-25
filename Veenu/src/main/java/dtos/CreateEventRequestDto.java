@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -47,7 +48,7 @@ public class CreateEventRequestDto {
     @NotNull(message = "isFree must be specified")
     private Boolean isFree;
 
-    private Double price;
+    private BigDecimal price;
 
     private Integer capacity;
 
