@@ -34,4 +34,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // neighborhood-based browsing
     List<User> findByNeighborhood(String neighborhood);
+
+    boolean existsByUsernameAndIdNot(String username, Long id);
+    boolean existsByEmailAndIdNot(String email, Long id);
 }
