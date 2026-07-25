@@ -52,4 +52,7 @@ public class Note {
     @PreUpdate protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @Column(length = 500)
+    private String suspensionReason;
 }

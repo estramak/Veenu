@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import model.User;
+import model.enums.EntityStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,6 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import repositories.UserRepository;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,18 +25,20 @@ import java.util.List;
  * validates it, and populates the SecurityContext so downstream
  * @PreAuthorize checks and SecurityFilterChain rules can use it.
  *
- * This is stateless — it trusts the claims embedded in the token
- * (userId, role) rather than re-querying the User table on every
- * request. If a user is suspended/banned mid-session, that won't take
- * effect until their token expires or is explicitly revoked elsewhere.
+ * Performs a DB lookup on every authenticated request to check the
+ * user's current EntityStatus, so suspended/banned users are rejected
+ * immediately rather than waiting for their token to expire. This
+ * trades a small amount of per-request latency for instant enforcement.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -53,13 +58,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtService.isTokenValid(token, userId)
                         && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                    List<GrantedAuthority> authorities =
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                    User user = userRepository.findById(userId).orElse(null);
 
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                    boolean blocked = user == null
+                            || user.getEntityStatus() == EntityStatus.BANNED
+                            || user.getEntityStatus() == EntityStatus.SUSPENDED;
 
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    if (!blocked) {
+                        List<GrantedAuthority> authorities =
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role));
+
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(userId, null, authorities);
+
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 }
             } catch (Exception e) {
                 // Invalid/expired/malformed token — leave SecurityContext

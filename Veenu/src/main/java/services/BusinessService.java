@@ -3,6 +3,7 @@ package services;
 import dtos.BusinessResponseDto;
 import dtos.CreateBusinessRequestDto;
 import dtos.ReportBusinessRequestDto;
+import jakarta.transaction.Transactional;
 import model.Business;
 import model.BusinessReport;
 import model.Listing;
@@ -144,6 +145,42 @@ public class BusinessService {
     // action is required per current design — review happens externally.
     private void notifyAdminOfFlaggedBusiness(Business business, long reportCount) {
         // Placeholder — implement Slack webhook call here
+    }
+
+    @Transactional
+    public void suspend(Long businessId, String reason) {
+        Business business = businessRepository.findById(businessId)
+                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        business.setEntityStatus(EntityStatus.SUSPENDED);
+        business.setSuspensionReason(reason);
+        businessRepository.save(business);
+
+        // TODO; wire to EmailService, only if reason present
+    }
+
+    @Transactional
+    public void requestChanges(Long businessId, String reason) {
+        Business business = businessRepository.findById(businessId)
+                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        business.setEntityStatus(EntityStatus.CHANGES_REQUESTED);
+        business.setSuspensionReason(reason);
+        businessRepository.save(business);
+
+        // TODO: wire to EmailService, only if reason present
+    }
+
+    @Transactional
+    public void approve(Long businessId) {
+        Business business = businessRepository.findById(businessId)
+                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        business.setEntityStatus(EntityStatus.ACTIVE);
+        business.setSuspensionReason(null);
+        businessRepository.save(business);
+
+        // TODO: wire to EmailService, approval notification
     }
 
     private BusinessResponseDto toResponseDto(Business business) {

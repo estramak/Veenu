@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import repositories.BusinessRepository;
 import repositories.EventRepository;
 import repositories.ListingRepository;
+import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -120,4 +121,32 @@ public class ListingService {
                 .postedByOwner(event.getPostedByOwner())
                 .build();
     }
+
+// ... inside the class, alongside your existing methods ...
+
+    @Transactional
+    public void suspend(Long listingId, String reason) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+
+        listing.setEntityStatus(EntityStatus.SUSPENDED);
+        listing.setSuspensionReason(reason);
+
+        listingRepository.save(listing);
+
+        // TODO: wire to EmailService if listing owners need notification
+    }
+
+    @Transactional
+    public void approve(Long listingId) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+
+        listing.setEntityStatus(EntityStatus.ACTIVE);
+        listing.setSuspensionReason(null);
+
+        listingRepository.save(listing);
+    }
+
+
 }

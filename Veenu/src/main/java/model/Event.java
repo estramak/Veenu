@@ -54,4 +54,7 @@ public class Event {
 
     @Column(nullable = false)
     private Boolean postedByOwner = false;
+
+    @Column(length = 500)
+    private String suspensionReason;
 }
