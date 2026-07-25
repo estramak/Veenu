@@ -36,6 +36,3 @@ build/
 application-secrets.properties
 application-local.properties
 .env
-
-data/
-
