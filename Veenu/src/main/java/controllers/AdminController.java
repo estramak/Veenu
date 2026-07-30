@@ -1,11 +1,13 @@
 package controllers;
 
+import dtos.AdminQueueResponseDto;
 import dtos.SuspendRequestDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import services.AdminQueueService;
 import services.BusinessService;
 import services.ListingService;
 import services.UserService;
@@ -17,15 +19,18 @@ public class AdminController {
     private final BusinessService businessService;
     private final ListingService listingService;
     private final UserService userService;
+    private final AdminQueueService adminQueueService;
 
     public AdminController(
             BusinessService businessService,
             ListingService listingService,
-            UserService userService)
-    {
+            UserService userService,
+            AdminQueueService adminQueueService
+    ) {
         this.businessService = businessService;
         this.listingService = listingService;
         this.userService = userService;
+        this.adminQueueService = adminQueueService;
     }
 
     /*
@@ -128,5 +133,12 @@ public class AdminController {
         String reason = (request != null) ? request.getReason() : null;
         userService.ban(id, reason);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/queue")
+    public ResponseEntity<AdminQueueResponseDto> getQueue(
+            @NotNull Authentication authentication
+    ) {
+        return ResponseEntity.ok(adminQueueService.getQueue());
     }
 }
