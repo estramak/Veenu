@@ -11,9 +11,11 @@ import repositories.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, EmailService emailService) {
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -24,6 +26,10 @@ public class UserService {
         user.setEntityStatus(EntityStatus.SUSPENDED);
         user.setSuspensionReason(reason);
         userRepository.save(user);
+
+        if (reason != null && !reason.isBlank()) {
+            emailService.sendUserSuspensionEmail(user, reason);
+        }
     }
 
     @Transactional
@@ -34,6 +40,8 @@ public class UserService {
         user.setEntityStatus(EntityStatus.CHANGES_REQUESTED);
         user.setSuspensionReason(reason);
         userRepository.save(user);
+
+        emailService.sendUserChangesRequestedEmail(user, reason);
     }
 
     @Transactional
@@ -44,6 +52,8 @@ public class UserService {
         user.setEntityStatus(EntityStatus.ACTIVE);
         user.setSuspensionReason(null);
         userRepository.save(user);
+
+        emailService.sendUserApprovedEmail(user);
     }
 
     @Transactional
@@ -55,9 +65,7 @@ public class UserService {
         user.setSuspensionReason(reason);
         userRepository.save(user);
 
-        // TODO: invalidate active JWT/session — otherwise a banned user
-        // stays logged in on any device until their token naturally
-        // expires (up to 30 days per your cookie duration)
+        emailService.sendUserBannedEmail(user, reason);
     }
 
     @Transactional

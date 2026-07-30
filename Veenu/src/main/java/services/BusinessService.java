@@ -33,19 +33,22 @@ public class BusinessService {
     private final BusinessReportRepository businessReportRepository;
     private final ListingRepository listingRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     public BusinessService(
             BusinessRepository businessRepository,
             BusinessUserRepository businessUserRepository,
             BusinessReportRepository businessReportRepository,
             ListingRepository listingRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            EmailService emailService
     ) {
         this.businessRepository = businessRepository;
         this.businessUserRepository = businessUserRepository;
         this.businessReportRepository = businessReportRepository;
         this.listingRepository = listingRepository;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     // create business
@@ -156,7 +159,9 @@ public class BusinessService {
         business.setSuspensionReason(reason);
         businessRepository.save(business);
 
-        // TODO; wire to EmailService, only if reason present
+        if (reason != null && !reason.isBlank()) {
+            emailService.sendBusinessSuspensionEmail(business, reason);
+        }
     }
 
     @Transactional
@@ -168,7 +173,7 @@ public class BusinessService {
         business.setSuspensionReason(reason);
         businessRepository.save(business);
 
-        // TODO: wire to EmailService, only if reason present
+        emailService.sendBusinessChangesRequestedEmail(business, reason);
     }
 
     @Transactional
@@ -180,7 +185,7 @@ public class BusinessService {
         business.setSuspensionReason(null);
         businessRepository.save(business);
 
-        // TODO: wire to EmailService, approval notification
+        emailService.sendBusinessApprovedEmail(business);
     }
 
     private BusinessResponseDto toResponseDto(Business business) {

@@ -44,4 +44,6 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     List<Business> findAllActive();
 
     List<Business> findBySuspensionReasonIsNotNull();
+
+    List<Business> findByFlaggedForReviewTrue();
 }
