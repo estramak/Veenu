@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import Login from './pages/Login';
+import AdminQueue from './pages/AdminQueue';
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   return loggedIn
-    ? <p>You're logged in! (Admin queue page coming next)</p>
+    ? <AdminQueue />
     : <Login onLoggedIn={() => setLoggedIn(true)} />;
 }

@@ -38,11 +38,20 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ reason }),
         }),
+    approveUser: (id) =>
+        request(`/api/admin/users/${id}/approve`, { method: 'POST' }
+        ),
+    banUser: (id, reason) =>
+        request(`/api/admin/users/${id}/ban`, {
+          method: 'POST',
+          body: JSON.stringify({ reason }),
+        }),
     suspendListing: (id, reason) =>
         request(`/api/admin/listings/${id}/suspend`, {
             method: 'POST',
             body: JSON.stringify({ reason }),
         }),
     approveListing: (id) =>
-        request(`/api/admin/listings/${id}/approve`, { method: 'POST' }),
+        request(`/api/admin/listings/${id}/approve`, { method: 'POST' }
+        ),
 };
