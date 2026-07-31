@@ -31,6 +31,9 @@ public class StatusChangeLog {
     private Long entityId;
 
     @Enumerated(EnumType.STRING)
+    private EntityStatus previousStatus;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EntityStatus newStatus;
 
