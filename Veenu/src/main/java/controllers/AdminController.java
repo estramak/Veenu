@@ -43,7 +43,8 @@ public class AdminController {
             @NotNull Authentication authentication
     ) {
         String reason = (request != null) ? request.getReason() : null;
-        businessService.suspend(id, reason);
+        String adminNotes = (request != null) ? request.getAdminNotes(): null;
+        businessService.suspend(id, reason, adminNotes);
         return ResponseEntity.noContent().build();
     }
 
@@ -53,16 +54,18 @@ public class AdminController {
             @Valid @RequestBody SuspendRequestDto request,
             @NotNull Authentication authentication
     ) {
-        businessService.requestChanges(id, request.getReason());
+        businessService.requestChanges(id, request.getReason(), request.getAdminNotes());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/business/{id}/approve")
     public ResponseEntity<Void> approveBusiness(
             @PathVariable Long id,
+            @RequestBody(required = false) SuspendRequestDto request,
             @NotNull Authentication authentication
     ) {
-        businessService.approve(id);
+        String adminNotes = (request != null) ? request.getAdminNotes() : null;
+        businessService.approve(id, adminNotes);
         return ResponseEntity.noContent().build();
     }
 

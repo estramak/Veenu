@@ -8,6 +8,7 @@ import model.Business;
 import model.BusinessReport;
 import model.Listing;
 import model.User;
+import model.enums.AdminEntityType;
 import model.enums.EntityStatus;
 import model.enums.LocationType;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class BusinessService {
     private final ListingRepository listingRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final StatusChangeLogService statusChangeLogService;
 
     public BusinessService(
             BusinessRepository businessRepository,
@@ -41,7 +43,8 @@ public class BusinessService {
             BusinessReportRepository businessReportRepository,
             ListingRepository listingRepository,
             UserRepository userRepository,
-            EmailService emailService
+            EmailService emailService,
+            StatusChangeLogService statusChangeLogService
     ) {
         this.businessRepository = businessRepository;
         this.businessUserRepository = businessUserRepository;
@@ -49,6 +52,7 @@ public class BusinessService {
         this.listingRepository = listingRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.statusChangeLogService = statusChangeLogService;
     }
 
     // create business
@@ -151,13 +155,17 @@ public class BusinessService {
     }
 
     @Transactional
-    public void suspend(Long businessId, String reason) {
+    public void suspend(Long businessId, String reason, String adminNotes) {
         Business business = businessRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Business not found"));
 
+        EntityStatus previousStatus = business.getEntityStatus();
         business.setEntityStatus(EntityStatus.SUSPENDED);
         business.setSuspensionReason(reason);
         businessRepository.save(business);
+
+        statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
+                previousStatus, EntityStatus.SUSPENDED, reason, adminNotes);
 
         if (reason != null && !reason.isBlank()) {
             emailService.sendBusinessSuspensionEmail(business, reason);
@@ -165,25 +173,33 @@ public class BusinessService {
     }
 
     @Transactional
-    public void requestChanges(Long businessId, String reason) {
+    public void requestChanges(Long businessId, String reason, String adminNotes) {
         Business business = businessRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Business not found"));
 
+        EntityStatus previousStatus = business.getEntityStatus();
         business.setEntityStatus(EntityStatus.CHANGES_REQUESTED);
         business.setSuspensionReason(reason);
         businessRepository.save(business);
+
+        statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
+                previousStatus, EntityStatus.CHANGES_REQUESTED, reason, adminNotes);
 
         emailService.sendBusinessChangesRequestedEmail(business, reason);
     }
 
     @Transactional
-    public void approve(Long businessId) {
+    public void approve(Long businessId, String adminNotes) {
         Business business = businessRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Business not found"));
 
+        EntityStatus previousStatus = business.getEntityStatus();
         business.setEntityStatus(EntityStatus.ACTIVE);
         business.setSuspensionReason(null);
         businessRepository.save(business);
+
+        statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
+                previousStatus, EntityStatus.SUSPENDED, null, adminNotes);
 
         emailService.sendBusinessApprovedEmail(business);
     }
