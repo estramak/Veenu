@@ -14,4 +14,7 @@ public class SuspendRequestDto {
 
     @Size(max = 500, message = "Reason must be 500 characters or fewer")
     private String reason;
+
+    @Size(max = 1000, message = "Admin notes must be 1000 characters or fewer")
+    private String adminNotes;
 }
