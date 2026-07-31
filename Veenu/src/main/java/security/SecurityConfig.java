@@ -73,7 +73,8 @@ public class SecurityConfig {
         // domain once deployed
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "http://localhost:5500"
+                "http://localhost:5500",
+                "http://localhost:5173"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
