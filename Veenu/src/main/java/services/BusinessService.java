@@ -9,6 +9,7 @@ import model.BusinessReport;
 import model.Listing;
 import model.User;
 import model.enums.AdminEntityType;
+import model.enums.BusinessUserRole;
 import model.enums.EntityStatus;
 import model.enums.LocationType;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import repositories.ListingRepository;
 import repositories.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BusinessService {
@@ -149,49 +151,76 @@ public class BusinessService {
     // TODO: wire up to the Slack webhook per Architecture.md's admin
     // notification pattern (currently used for new-listing review,
     // repurposed here for report-threshold review). No in-app admin
-    // action is required per current design — review happens externally.
+    // action is required per current design, review happens externally.
     private void notifyAdminOfFlaggedBusiness(Business business, long reportCount) {
         // Placeholder — implement Slack webhook call here
     }
 
     @Transactional
-    public void suspend(Long businessId, String reason, String adminNotes) {
-        Business business = businessRepository.findById(businessId)
-                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
-
-        EntityStatus previousStatus = business.getEntityStatus();
-        business.setEntityStatus(EntityStatus.SUSPENDED);
-        business.setSuspensionReason(reason);
-        businessRepository.save(business);
-
-        statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
-                previousStatus, EntityStatus.SUSPENDED, reason, adminNotes);
-
-        if (reason != null && !reason.isBlank()) {
-            emailService.sendBusinessSuspensionEmail(business, reason);
-        }
-    }
-
-    @Transactional
-    public void requestChanges(Long businessId, String reason, String adminNotes) {
+    public void requestChanges(Long businessId, String reason, String adminNotes, Long changedBy) {
         Business business = businessRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Business not found"));
 
         EntityStatus previousStatus = business.getEntityStatus();
         business.setEntityStatus(EntityStatus.CHANGES_REQUESTED);
         business.setSuspensionReason(reason);
+        business.setFlaggedForReview(false);
         businessRepository.save(business);
 
         statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
-                previousStatus, EntityStatus.CHANGES_REQUESTED, reason, adminNotes);
+                previousStatus, EntityStatus.CHANGES_REQUESTED, reason, adminNotes, changedBy);
 
-        emailService.sendBusinessChangesRequestedEmail(business, reason);
+        resolveOwnerEmail(business).ifPresent(email ->
+                emailService.sendBusinessChangesRequestedEmail(business, reason, email));
     }
 
     @Transactional
-    public void approve(Long businessId, String adminNotes) {
+    public void approve(Long businessId, String adminNotes, Long changedBy) {
         Business business = businessRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        if (business.getEntityStatus() == EntityStatus.TAKEN_DOWN) {
+            throw new IllegalArgumentException("This business has been permanently taken down and cannot be reinstated");
+        }
+        EntityStatus previousStatus = business.getEntityStatus();
+        business.setEntityStatus(EntityStatus.ACTIVE);
+        business.setSuspensionReason(null);
+        business.setFlaggedForReview(false);
+        businessRepository.save(business);
+
+        statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
+                previousStatus, EntityStatus.ACTIVE, null, adminNotes, changedBy);
+
+        resolveOwnerEmail(business).ifPresent(email ->
+                emailService.sendBusinessApprovedEmail(business, email));
+    }
+
+    @Transactional
+    public void takeDown(Long businessId, String reason, String adminNotes, Long changedBy) {
+        Business business = businessRepository.findById(businessId)
+                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        EntityStatus previousStatus = business.getEntityStatus();
+        business.setEntityStatus(EntityStatus.TAKEN_DOWN);
+        business.setSuspensionReason(reason);
+        business.setFlaggedForReview(false);
+        businessRepository.save(business);
+
+        statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
+                previousStatus, EntityStatus.TAKEN_DOWN, reason, adminNotes, changedBy);
+
+        resolveOwnerEmail(business).ifPresent(email ->
+                emailService.sendBusinessTakenDownEmail(business, reason, email));
+    }
+
+    @Transactional
+    public void overrideTakeDown(Long businessId, String adminNotes, Long changedBy) {
+        Business business = businessRepository.findById(businessId)
+                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        if (business.getEntityStatus() != EntityStatus.TAKEN_DOWN) {
+            throw new IllegalArgumentException("This business is not currently taken down");
+        }
 
         EntityStatus previousStatus = business.getEntityStatus();
         business.setEntityStatus(EntityStatus.ACTIVE);
@@ -199,9 +228,33 @@ public class BusinessService {
         businessRepository.save(business);
 
         statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
-                previousStatus, EntityStatus.SUSPENDED, null, adminNotes);
+                previousStatus, EntityStatus.ACTIVE, "Take-down overridden by admin", adminNotes, changedBy);
 
-        emailService.sendBusinessApprovedEmail(business);
+        resolveOwnerEmail(business).ifPresent(email ->
+                emailService.sendBusinessApprovedEmail(business, email));
+    }
+
+    @Transactional
+    public void remove(Long businessId, String reason, String adminNotes, Long changedBy) {
+        Business business = businessRepository.findById(businessId)
+                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        EntityStatus previousStatus = business.getEntityStatus();
+        business.setEntityStatus(EntityStatus.REMOVED);
+        business.setSuspensionReason(reason);
+        business.setFlaggedForReview(false);
+        businessRepository.save(business);
+
+        statusChangeLogService.log(AdminEntityType.BUSINESS, businessId,
+                previousStatus, EntityStatus.REMOVED, reason, adminNotes, changedBy);
+
+        resolveOwnerEmail(business).ifPresent(email ->
+                emailService.sendBusinessRemovedEmail(business, reason, email));
+    }
+
+    private Optional<String> resolveOwnerEmail(Business business) {
+        return businessUserRepository.findByBusiness_IdAndRole(business.getId(), BusinessUserRole.OWNER)
+                .map(bu -> bu.getUser().getEmail());
     }
 
     private BusinessResponseDto toResponseDto(Business business) {

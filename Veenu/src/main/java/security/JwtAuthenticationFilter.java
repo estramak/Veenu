@@ -61,8 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     User user = userRepository.findById(userId).orElse(null);
 
                     boolean blocked = user == null
-                            || user.getEntityStatus() == EntityStatus.BANNED
-                            || user.getEntityStatus() == EntityStatus.SUSPENDED;
+                            || user.getEntityStatus() == EntityStatus.TAKEN_DOWN;
 
                     if (!blocked) {
                         List<GrantedAuthority> authorities =

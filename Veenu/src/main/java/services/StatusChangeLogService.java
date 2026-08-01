@@ -24,7 +24,8 @@ public class StatusChangeLogService {
             EntityStatus previousStatus,
             EntityStatus newStatus,
             String reason,
-            String adminNotes
+            String adminNotes,
+            Long changedBy
     ) {
         StatusChangeLog entry = new StatusChangeLog();
         entry.setEntityType(entityType);
@@ -33,6 +34,7 @@ public class StatusChangeLogService {
         entry.setNewStatus(newStatus);
         entry.setReason(reason);
         entry.setAdminNotes(adminNotes);
+        entry.setChangedBy(changedBy);
         logRepository.save(entry);
     }
 

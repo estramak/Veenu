@@ -7,6 +7,7 @@ import dtos.ListingSummaryDto;
 import model.Business;
 import model.Event;
 import model.Listing;
+import model.enums.AdminEntityType;
 import model.enums.EntityStatus;
 import org.springframework.stereotype.Service;
 import repositories.BusinessRepository;
@@ -14,6 +15,7 @@ import repositories.EventRepository;
 import repositories.ListingRepository;
 import jakarta.transaction.Transactional;
 
+import javax.swing.text.html.parser.Entity;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -25,15 +27,21 @@ public class ListingService {
     private final ListingRepository listingRepository;
     private final BusinessRepository businessRepository;
     private final EventRepository eventRepository;
+    private final EmailService emailService;
+    private final StatusChangeLogService statusChangeLogService;
 
     public ListingService(
         ListingRepository listingRepository,
         BusinessRepository businessRepository,
-        EventRepository eventRepository
+        EventRepository eventRepository,
+        StatusChangeLogService statusChangeLogService,
+        EmailService emailService
     ) {
         this.listingRepository = listingRepository;
         this.businessRepository = businessRepository;
         this.eventRepository = eventRepository;
+        this.statusChangeLogService = statusChangeLogService;
+        this.emailService = emailService;
     }
 
     // nearby search
@@ -125,28 +133,90 @@ public class ListingService {
 // ... inside the class, alongside your existing methods ...
 
     @Transactional
-    public void suspend(Long listingId, String reason) {
+    public void requestChanges(Long listingId, String reason, String adminNotes, Long changedBy) {
         Listing listing = listingRepository.findById(listingId)
                 .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
 
-        listing.setEntityStatus(EntityStatus.SUSPENDED);
+        EntityStatus previousStatus = listing.getEntityStatus();
+        listing.setEntityStatus(EntityStatus.CHANGES_REQUESTED);
         listing.setSuspensionReason(reason);
-
         listingRepository.save(listing);
 
-        // TODO: wire to EmailService if listing owners need notification
+        statusChangeLogService.log(AdminEntityType.LISTING, listingId,
+                previousStatus, EntityStatus.CHANGES_REQUESTED, reason, adminNotes, changedBy);
+
+        emailService.sendListingChangesRequestedEmail(listing, reason, listing.getCreatedBy().getEmail());
     }
 
     @Transactional
-    public void approve(Long listingId) {
+    public void approve(Long listingId, String adminNotes, Long changedBy) {
         Listing listing = listingRepository.findById(listingId)
                 .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
 
+        if (listing.getEntityStatus() == EntityStatus.TAKEN_DOWN) {
+            throw new IllegalArgumentException("This listing has been permanently taken down and cannot be reinstated");
+        }
+
+        EntityStatus previousStatus = listing.getEntityStatus();
         listing.setEntityStatus(EntityStatus.ACTIVE);
         listing.setSuspensionReason(null);
-
         listingRepository.save(listing);
+
+        statusChangeLogService.log(AdminEntityType.LISTING, listingId,
+                previousStatus, EntityStatus.ACTIVE, null, adminNotes, changedBy);
+
+        emailService.sendListingApprovedEmail(listing, listing.getCreatedBy().getEmail());
     }
 
+    @Transactional
+    public void takeDown(Long listingId, String reason, String adminNotes, Long changedBy) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
 
+        EntityStatus previousStatus = listing.getEntityStatus();
+        listing.setEntityStatus(EntityStatus.TAKEN_DOWN);
+        listing.setSuspensionReason(reason);
+        listingRepository.save(listing);
+
+        statusChangeLogService.log(AdminEntityType.LISTING, listingId,
+                previousStatus, EntityStatus.TAKEN_DOWN, reason, adminNotes, changedBy);
+
+        emailService.sendListingTakenDownEmail(listing, reason, listing.getCreatedBy().getEmail());
+    }
+
+    @Transactional
+    public void overrideTakeDown(Long listingId, String adminNotes, Long changedBy) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+
+        if (listing.getEntityStatus() != EntityStatus.TAKEN_DOWN) {
+            throw new IllegalArgumentException("This listing is not currently taken down");
+        }
+
+        EntityStatus previousStatus = listing.getEntityStatus();
+        listing.setEntityStatus(EntityStatus.ACTIVE);
+        listing.setSuspensionReason(null);
+        listingRepository.save(listing);
+
+        statusChangeLogService.log(AdminEntityType.LISTING, listingId,
+                previousStatus, EntityStatus.ACTIVE, "Take-down overridden by admin", adminNotes, changedBy);
+
+        emailService.sendListingOverrideTakeDownEmail(listing, listing.getCreatedBy().getEmail());
+    }
+
+    @Transactional
+    public void remove(Long listingId, String reason, String adminNotes, Long changedBy) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+
+        EntityStatus previousStatus = listing.getEntityStatus();
+        listing.setEntityStatus(EntityStatus.REMOVED);
+        listing.setSuspensionReason(reason);
+        listingRepository.save(listing);
+
+        statusChangeLogService.log(AdminEntityType.LISTING, listingId,
+                previousStatus, EntityStatus.REMOVED, reason, adminNotes, changedBy);
+
+        emailService.sendListingRemovedEmail(listing, reason, listing.getCreatedBy().getEmail());
+    }
 }

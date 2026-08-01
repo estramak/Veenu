@@ -27,6 +27,10 @@ public class Listing {
     @ToString.Include
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submitted_by_user_id", nullable = false)
+    private User createdBy;
+
     @Column(nullable = false)
     private String name;
 

@@ -3,6 +3,7 @@ package services;
 import dtos.UpdateProfileRequestDto;
 import jakarta.transaction.Transactional;
 import model.User;
+import model.enums.AdminEntityType;
 import model.enums.EntityStatus;
 import org.springframework.stereotype.Service;
 import repositories.UserRepository;
@@ -12,60 +13,88 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final StatusChangeLogService statusChangeLogService;
 
-    public UserService(UserRepository userRepository, EmailService emailService) {
+    public UserService(
+            UserRepository userRepository,
+            EmailService emailService,
+            StatusChangeLogService statusChangeLogService
+    ) {
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.statusChangeLogService = statusChangeLogService;
     }
 
     @Transactional
-    public void suspend(Long userId, String reason) {
+    public void requestChanges(Long userId, String reason, String adminNotes, Long changedBy) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.setEntityStatus(EntityStatus.SUSPENDED);
-        user.setSuspensionReason(reason);
-        userRepository.save(user);
-
-        if (reason != null && !reason.isBlank()) {
-            emailService.sendUserSuspensionEmail(user, reason);
-        }
-    }
-
-    @Transactional
-    public void requestChanges(Long userId, String reason) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        EntityStatus previousStatus = user.getEntityStatus();
         user.setEntityStatus(EntityStatus.CHANGES_REQUESTED);
         user.setSuspensionReason(reason);
         userRepository.save(user);
+
+        statusChangeLogService.log(AdminEntityType.USER, userId,
+                previousStatus, EntityStatus.CHANGES_REQUESTED, reason, adminNotes, changedBy);
 
         emailService.sendUserChangesRequestedEmail(user, reason);
     }
 
     @Transactional
-    public void approve(Long userId) {
+    public void approve(Long userId, String adminNotes, Long changedBy) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        if (user.getEntityStatus() == EntityStatus.TAKEN_DOWN) {
+            throw new IllegalArgumentException("This user has been permanently taken down and cannot be reinstated");
+        }
+
+        EntityStatus previousStatus = user.getEntityStatus();
         user.setEntityStatus(EntityStatus.ACTIVE);
         user.setSuspensionReason(null);
         userRepository.save(user);
+
+        statusChangeLogService.log(AdminEntityType.USER, userId,
+                previousStatus, EntityStatus.ACTIVE, null, adminNotes, changedBy);
 
         emailService.sendUserApprovedEmail(user);
     }
 
     @Transactional
-    public void ban(Long userId, String reason) {
+    public void takeDown(Long userId, String reason, String adminNotes, Long changedBy) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.setEntityStatus(EntityStatus.BANNED);
+        EntityStatus previousStatus = user.getEntityStatus();
+        user.setEntityStatus(EntityStatus.TAKEN_DOWN);
         user.setSuspensionReason(reason);
         userRepository.save(user);
 
-        emailService.sendUserBannedEmail(user, reason);
+        statusChangeLogService.log(AdminEntityType.USER, userId,
+                previousStatus, EntityStatus.TAKEN_DOWN, reason, adminNotes, changedBy);
+
+        emailService.sendUserTakenDownEmail(user, reason);
+    }
+
+    @Transactional
+    public void overrideTakeDown(Long userId, String adminNotes, Long changedBy) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.getEntityStatus() != EntityStatus.TAKEN_DOWN) {
+            throw new IllegalArgumentException("This user is not currently taken down");
+        }
+
+        EntityStatus previousStatus = user.getEntityStatus();
+        user.setEntityStatus(EntityStatus.ACTIVE);
+        user.setSuspensionReason(null);
+        userRepository.save(user);
+
+        statusChangeLogService.log(AdminEntityType.USER, userId,
+                previousStatus, EntityStatus.ACTIVE, "Take-down overridden by admin", adminNotes, changedBy);
+
+        emailService.sendUserOverrideTakeDownEmail(user);
     }
 
     @Transactional

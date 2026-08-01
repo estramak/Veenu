@@ -43,6 +43,9 @@ public class StatusChangeLog {
     @Column(length = 1000)
     private String adminNotes;
 
+    @Column
+    private Long changedBy;
+
     @Column(nullable = false)
     private LocalDateTime changedAt;
 
