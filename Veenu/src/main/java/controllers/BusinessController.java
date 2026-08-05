@@ -3,14 +3,12 @@ package controllers;
 import dtos.BusinessResponseDto;
 import dtos.CreateBusinessRequestDto;
 import dtos.ReportBusinessRequestDto;
+import dtos.UpdateBusinessRequestDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import services.BusinessService;
 
 @RestController
@@ -30,6 +28,17 @@ public class BusinessController {
         Long userId = (Long) authentication.getPrincipal();
         BusinessResponseDto result = businessService.createBusiness(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    @PutMapping("/api/business/{id}")
+    public ResponseEntity<Void> updateBusiness(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateBusinessRequestDto request,
+        Authentication authentication
+    ) {
+        Long userId = (Long) authentication.getPrincipal();
+        businessService.updateBusiness(id, request, userId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/api/business/{id}/report")

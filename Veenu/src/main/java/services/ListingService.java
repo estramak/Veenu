@@ -4,6 +4,7 @@ import dtos.BusinessResponseDto;
 import dtos.EventResponseDto;
 import dtos.ListingDetailDto;
 import dtos.ListingSummaryDto;
+import dtos.UpdateListingRequestDto;
 import model.Business;
 import model.Event;
 import model.Listing;
@@ -131,6 +132,41 @@ public class ListingService {
     }
 
 // ... inside the class, alongside your existing methods ...
+
+    @Transactional
+    public void updateListing(Long listingId, UpdateListingRequestDto request, Long userId) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+
+        if (!listing.getCreatedBy().getId().equals(userId)) {
+            throw new IllegalArgumentException("You can only update listings you submitted");
+        }
+
+        if (request.getName() != null) {
+            if (listing.getHasDistinctName()) {
+                throw new IllegalArgumentException("The name of a business-attached listing cannot be changed");
+            }
+            listing.setName(request.getName());
+        }
+        if (request.getDescription() != null) listing.setDescription(request.getDescription());
+        if (request.getLatitude() != null) listing.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null) listing.setLongitude(request.getLongitude());
+        if (request.getAddress() != null) listing.setAddress(request.getAddress());
+        if (request.getAddressLine2() != null) listing.setAddressLine2(request.getAddressLine2());
+        if (request.getCity() != null) listing.setCity(request.getCity());
+        if (request.getState() != null) listing.setState(request.getState());
+        if (request.getZip() != null) listing.setZip(request.getZip());
+        if (request.getCountry() != null) listing.setCountry(request.getCountry());
+        if (request.getLocationType() != null) listing.setLocationType(request.getLocationType());
+
+        if (listing.getEntityStatus() == EntityStatus.CHANGES_REQUESTED) {
+            listing.setEntityStatus(EntityStatus.PENDING);
+            listingRepository.save(listing);
+            emailService.sendListingPendingReviewEmail(listing, listing.getCreatedBy().getEmail());
+        } else {
+            listingRepository.save(listing);
+        }
+    }
 
     @Transactional
     public void requestChanges(Long listingId, String reason, String adminNotes, Long changedBy) {

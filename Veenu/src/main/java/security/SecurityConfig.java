@@ -43,7 +43,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/listings/nearby", "/api/listings/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/listings/nearby", "/api/listings/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notes/listing/*", "/api/notes/event/*", "/api/notes/event/*/combined").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/feed").permitAll()
                         .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/h2-console")).permitAll()
@@ -51,6 +51,8 @@ public class SecurityConfig {
 
                         // Admin-only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // Must precede /api/business/** so any authenticated user (not just BUSINESS role) can submit a report
                         .requestMatchers(HttpMethod.POST, "/api/business/*/report").authenticated()
 
                         // Business-role required

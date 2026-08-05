@@ -18,10 +18,13 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     //unique field lookups
     Optional<Business> findByEmail(String email);
     boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, Long id);
     Optional<Business> findByPhone(String phone);
     boolean existsByPhone(String phone);
+    boolean existsByPhoneAndIdNot(String phone, Long id);
     Optional<Business> findByWebsite(String website);
     boolean existsByWebsite(String website);
+    boolean existsByWebsiteAndIdNot(String website, Long id);
 
     //ownership / access
     List<Business> findByBusinessUsers_UserId(Long userId);

@@ -119,6 +119,9 @@ public class UserService {
         // CHANGES_REQUESTED -> PENDING per Database_Schema.md
         if (user.getEntityStatus() == EntityStatus.CHANGES_REQUESTED) {
             user.setEntityStatus(EntityStatus.PENDING);
+            userRepository.save(user);
+            emailService.sendUserPendingReviewEmail(user);
+            return;
         }
 
         userRepository.save(user);
