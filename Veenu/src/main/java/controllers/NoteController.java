@@ -22,7 +22,7 @@ public class NoteController {
         this.noteService = noteService;
     }
 
-    @GetMapping("/listing/{listingid}")
+    @GetMapping("/listing/{listingId}")
     public ResponseEntity<List<NoteResponseDto>> getNotesForListing(@PathVariable Long listingId) {
         return ResponseEntity.ok(noteService.getNotesForListing(listingId));
     }
