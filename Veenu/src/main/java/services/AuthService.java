@@ -59,11 +59,8 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        if (user.getEntityStatus() == EntityStatus.SUSPENDED) {
-            throw new IllegalStateException("This account has been suspended: " + user.getSuspensionReason());
-        }
-        if (user.getEntityStatus() == EntityStatus.BANNED) {
-            throw new IllegalStateException("This account has been permanently banned");
+        if (user.getEntityStatus() == EntityStatus.TAKEN_DOWN) {
+            throw new IllegalStateException("This account has been taken down: " + user.getSuspensionReason());
         }
 
         String token = jwtService.generateToken(user);
