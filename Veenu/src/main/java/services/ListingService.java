@@ -10,6 +10,7 @@ import model.Event;
 import model.Listing;
 import model.enums.AdminEntityType;
 import model.enums.EntityStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import repositories.BusinessRepository;
 import repositories.EventRepository;
@@ -139,7 +140,7 @@ public class ListingService {
                 .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
 
         if (!listing.getCreatedBy().getId().equals(userId)) {
-            throw new IllegalArgumentException("You can only update listings you submitted");
+            throw new AccessDeniedException("You can only update listings you submitted");
         }
 
         if (request.getName() != null) {
