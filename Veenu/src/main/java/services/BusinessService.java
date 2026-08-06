@@ -1,17 +1,17 @@
 package services;
 
+import dtos.BusinessHoursDto;
 import dtos.BusinessResponseDto;
 import dtos.CreateBusinessRequestDto;
 import dtos.ReportBusinessRequestDto;
+import dtos.UpdateBusinessRequestDto;
 import jakarta.transaction.Transactional;
-import model.Business;
-import model.BusinessReport;
-import model.Listing;
-import model.User;
+import model.*;
 import model.enums.AdminEntityType;
 import model.enums.BusinessUserRole;
 import model.enums.EntityStatus;
 import model.enums.LocationType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import repositories.BusinessRepository;
 import repositories.BusinessReportRepository;
@@ -153,7 +153,66 @@ public class BusinessService {
     // repurposed here for report-threshold review). No in-app admin
     // action is required per current design, review happens externally.
     private void notifyAdminOfFlaggedBusiness(Business business, long reportCount) {
-        // Placeholder — implement Slack webhook call here
+        // placeholder
+    }
+
+    @Transactional
+    public void updateBusiness(Long businessId, UpdateBusinessRequestDto request, Long userId) {
+        Business business = businessRepository.findById(businessId)
+                .orElseThrow(() -> new IllegalArgumentException("Business not found"));
+
+        BusinessUser owner = businessUserRepository
+                .findByBusiness_IdAndRole(businessId, BusinessUserRole.OWNER)
+                .orElseThrow(() -> new IllegalArgumentException("This business has no owner"));
+        if (!owner.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("Only the business owner can update business details");
+        }
+
+        if (request.getEmail() != null && businessRepository.existsByEmailAndIdNot(request.getEmail(), businessId)) {
+            throw new IllegalArgumentException("A business with this email already exists");
+        }
+        if (request.getPhone() != null && businessRepository.existsByPhoneAndIdNot(request.getPhone(), businessId)) {
+            throw new IllegalArgumentException("A business with this phone already exists");
+        }
+        if (request.getWebsite() != null && businessRepository.existsByWebsiteAndIdNot(request.getWebsite(), businessId)) {
+            throw new IllegalArgumentException("A business with this website already exists");
+        }
+
+        if (request.getEmail() != null) business.setEmail(request.getEmail());
+        if (request.getPhone() != null) business.setPhone(request.getPhone());
+        if (request.getWebsite() != null) business.setWebsite(request.getWebsite());
+
+        Listing listing = business.getListing();
+        if (request.getLatitude() != null) listing.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null) listing.setLongitude(request.getLongitude());
+        if (request.getAddress() != null) listing.setAddress(request.getAddress());
+        if (request.getAddressLine2() != null) listing.setAddressLine2(request.getAddressLine2());
+        if (request.getCity() != null) listing.setCity(request.getCity());
+        if (request.getState() != null) listing.setState(request.getState());
+        if (request.getZip() != null) listing.setZip(request.getZip());
+        listingRepository.save(listing);
+
+        if (request.getHours() != null) {
+            business.getHours().clear();
+            for (BusinessHoursDto h : request.getHours()) {
+                BusinessHours bh = new BusinessHours();
+                bh.setBusiness(business);
+                bh.setDayOfWeek(h.getDayOfWeek());
+                bh.setOpenTime(h.getOpenTime());
+                bh.setCloseTime(h.getCloseTime());
+                bh.setClosed(h.isClosed());
+                business.getHours().add(bh);
+            }
+        }
+
+        if (business.getEntityStatus() == EntityStatus.CHANGES_REQUESTED) {
+            business.setEntityStatus(EntityStatus.PENDING);
+            businessRepository.save(business);
+            resolveOwnerEmail(business).ifPresent(email ->
+                    emailService.sendBusinessPendingEmail(business, null, email));
+        } else {
+            businessRepository.save(business);
+        }
     }
 
     @Transactional
