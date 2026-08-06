@@ -55,8 +55,8 @@ public class AdminQueueService {
                 .map(this::toListingItem)
                 .toList();
 
-        List<AdminQueueItemDto> suspendedListings = listingRepository
-                .findByEntityStatus(EntityStatus.SUSPENDED)
+        List<AdminQueueItemDto> takenDownListings = listingRepository
+                .findByEntityStatus(EntityStatus.TAKEN_DOWN)
                 .stream()
                 .map(this::toListingItem)
                 .toList();
@@ -66,7 +66,7 @@ public class AdminQueueService {
                 .pendingBusinesses(pendingBusinesses)
                 .pendingUsers(pendingUsers)
                 .pendingListings(pendingListings)
-                .suspendedListings(suspendedListings)
+                .suspendedListings(takenDownListings)
                 .build();
     }
 
