@@ -7,6 +7,7 @@ import model.Event;
 import model.Listing;
 import model.Note;
 import model.User;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import repositories.EventRepository;
 import repositories.ListingRepository;
@@ -45,7 +46,7 @@ public class NoteService {
     }
 
     public NoteResponseDto createNote(Long authorUserId, CreateNoteRequestDto request) {
-        if (request.getListingId() == null & request.getEventId() == null) {
+        if (request.getListingId() == null && request.getEventId() == null) {
             throw new IllegalArgumentException(
                     "A note must be attached to a listing or an event"
             );
@@ -120,7 +121,7 @@ public class NoteService {
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));
 
         if (!note.getAuthor().getId().equals(requestingUserId)) {
-            throw new IllegalStateException("You can only edit your own notes");
+            throw new AccessDeniedException("You can only edit your own notes");
         }
 
         Duration timeSinceCreation = Duration.between(note.getCreatedAt(), LocalDateTime.now());
