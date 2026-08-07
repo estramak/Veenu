@@ -3,11 +3,11 @@ package exceptions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
-import org.springframework.security.access.AccessDeniedException;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +19,6 @@ class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    // test IllegalArgumentException
     @Test
     void illegalArgumentException_mapsTo400() {
         ResponseEntity<Map<String, Object>> response =
@@ -29,7 +28,6 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody()).containsEntry("message", "bad input");
     }
 
-    // test AccessDeniedException
     @Test
     void accessDeniedException_mapsTo403() {
         ResponseEntity<Map<String, Object>> response =
@@ -39,9 +37,8 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody()).containsEntry("message", "You do not have permission: no permission");
     }
 
-    // test IllegalStateException
     @Test
-    void illegalStateException_mapTo409() {
+    void illegalStateException_mapsTo409() {
         ResponseEntity<Map<String, Object>> response =
                 handler.handleIllegalState(new IllegalStateException("conflict"));
 
