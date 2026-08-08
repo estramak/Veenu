@@ -53,4 +53,7 @@ public class CreateEventRequestDto {
     private Integer capacity;
 
     private String registrationUrl;
+
+    // set when the frontend showed nearby-match candidates, null means user said "no match"
+    private Long confirmedListingId;
 }
