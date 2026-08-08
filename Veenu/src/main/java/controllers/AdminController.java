@@ -4,14 +4,11 @@ import dtos.SuspendRequestDto;
 import jakarta.validation.Valid;
 import model.StatusChangeLog;
 import model.enums.AdminEntityType;
+import org.apache.catalina.connector.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import services.AdminQueueService;
-import services.BusinessService;
-import services.ListingService;
-import services.StatusChangeLogService;
-import services.UserService;
+import services.*;
 import dtos.AdminQueueResponseDto;
 
 import java.util.List;
@@ -25,19 +22,22 @@ public class AdminController {
     private final UserService userService;
     private final AdminQueueService adminQueueService;
     private final StatusChangeLogService statusChangeLogService;
+    private final NoteService noteService;
 
     public AdminController(
             BusinessService businessService,
             ListingService listingService,
             UserService userService,
             AdminQueueService adminQueueService,
-            StatusChangeLogService statusChangeLogService
+            StatusChangeLogService statusChangeLogService,
+            NoteService noteService
     ) {
         this.businessService = businessService;
         this.listingService = listingService;
         this.userService = userService;
         this.adminQueueService = adminQueueService;
         this.statusChangeLogService = statusChangeLogService;
+        this.noteService = noteService;
     }
 
 
@@ -216,14 +216,32 @@ public class AdminController {
     }
 
     // ---------- Note ----------
-    // TODO: Note has no entityStatus field and no NoteService moderation
-    // methods yet. Uncomment and wire up once that backend work is done:
-    //
-    // @PostMapping("/notes/{id}/take-down")
-    // public ResponseEntity<Void> takeDownNote(...) { ... }
-    //
-    // @PostMapping("/notes/{id}/override-take-down")
-    // public ResponseEntity<Void> overrideNoteTakeDown(...) { ... }
+    @PostMapping("/notes/{id}/taken-down")
+    public ResponseEntity<Void> takeDownNote(
+            @PathVariable Long id,
+            @RequestBody(required = false)
+            SuspendRequestDto request,
+            Authentication authentication
+    ) {
+        Long adminId = (Long) authentication.getPrincipal();
+        String reason = (request != null) ? request.getReason() : null;
+        String adminNotes = (request != null) ? request.getAdminNotes() : null;
+        noteService.takeDown(id, reason, adminNotes, adminId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/notes/{id}/override-take-down")
+    public ResponseEntity<Void> overrideNoteTakeDown(
+            @PathVariable Long id,
+            @Valid @RequestBody SuspendRequestDto request,
+            Authentication authentication
+    ) {
+        Long adminId = (Long) authentication.getPrincipal();
+        noteService.overrideTakeDown(id, request.getAdminNotes(), adminId);
+
+        return ResponseEntity.noContent().build();
+    }
 
     // ---------- Queue ----------
 
