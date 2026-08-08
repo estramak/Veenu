@@ -118,7 +118,8 @@ public class NoteService {
             notes.addAll(eventNotes);
         }
         return notes.stream()
-                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()))
+                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()) &&
+                        note.getEntityStatus() != EntityStatus.TAKEN_DOWN)
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .map(this::toResponseDto)
                 .toList();
