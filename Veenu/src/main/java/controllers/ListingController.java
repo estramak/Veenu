@@ -32,6 +32,15 @@ public class ListingController {
         return ResponseEntity.ok(results);
     }
 
+    //public, no auth required
+    @GetMapping("/nearby-check")
+    public ResponseEntity<List<ListingSummaryDto>> checkNearbyListings(
+            @RequestParam double latitude,
+            @RequestParam double longitude
+    ) {
+        return ResponseEntity.ok(listingService.checkNearbyListings(latitude, longitude));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ListingDetailDto> getListingDetail(@PathVariable Long id) {
         ListingDetailDto result =  listingService.getListingDetail(id);

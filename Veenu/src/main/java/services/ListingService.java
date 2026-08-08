@@ -132,8 +132,6 @@ public class ListingService {
                 .build();
     }
 
-// ... inside the class, alongside your existing methods ...
-
     @Transactional
     public void updateListing(Long listingId, UpdateListingRequestDto request, Long userId) {
         Listing listing = listingRepository.findById(listingId)
@@ -256,4 +254,15 @@ public class ListingService {
 
         emailService.sendListingRemovedEmail(listing, reason, listing.getCreatedBy().getEmail());
     }
+
+    private static final double DUPLICATE_LISTING_RADIUS_METERS = 20.0;
+
+    public List<ListingSummaryDto> checkNearbyListings(double latitude, double longitude) {
+        return listingRepository
+                .findWithinMeters(latitude, longitude, DUPLICATE_LISTING_RADIUS_METERS)
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
+    }
+
 }
