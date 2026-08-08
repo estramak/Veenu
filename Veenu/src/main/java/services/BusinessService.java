@@ -93,9 +93,10 @@ public class BusinessService {
                 request.getLatitude(), request.getLongitude(), DUPLICATE_LISTING_RADIUS_METERS
         );
 
-        // TODO: once the frontend confirmation dialog exists, nearby results should be returned to the user to confirm "is this the same place?"
-        if (!nearby.isEmpty()) {
-            Listing existing = nearby.get(0);
+        if (request.getConfirmedListingId() != null) {
+            Listing existing = listingRepository
+                    .findById(request.getConfirmedListingId())
+                    .orElseThrow(() -> new IllegalArgumentException("Confirmed listing not found"));
             if (businessRepository.existsByListingId(existing.getId())) {
                 throw new IllegalArgumentException(
                         "A business is already registered at this location");
