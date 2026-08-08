@@ -100,55 +100,29 @@ public class EventService {
         return toResponseDto(saved);
     }
 
-    // Finds an existing Listing within the duplicate-detection radius,
-    // or creates a new placeholder one if this is a genuinely new
-    // location with no attached Business. Per the Listing name
-    // inheritance logic, an event-only listing borrows the event's
-    // name temporarily (hasDistinctName = false) — a later Business or
-    // park/landmark designation can claim it permanently.
     private Listing resolveOrCreateListing(CreateEventRequestDto request) {
-        List<Listing> nearby = listingRepository.findWithinMeters(
-                request.getLatitude(), request.getLongitude(), DUPLICATE_LISTING_RADIUS_METERS
-        );
-
-        // TODO: same as BusinessService — once the frontend confirmation
-        // dialog exists, nearby results should be returned to the user
-        // to confirm "is this the same place?" rather than silently
-        // picked here.
-        if (!nearby.isEmpty()) {
-            return nearby.get(0);
+        if (request.getConfirmedListingId() != null) {
+            Listing existing = listingRepository.findById(request.getConfirmedListingId())
+                    .orElseThrow(() -> new IllegalArgumentException("Confirmed listing not found"));
+            if (businessRepository.existsByListingId(existing.getId())) {
+                throw new IllegalArgumentException("A business is already registered at this location");
+            }
+            return existing;
         }
 
         Listing listing = new Listing();
-
-        // If the frontend only sent coordinates (a raw pin drop, no
-        // typed address), fill in the address fields via reverse
-        // geocoding. If the user already typed an address, trust that
-        // over the geocoder — it's more likely to be accurate/current
-        // than OSM data, and skips an external call entirely.
-        if (request.getAddress() == null || request.getAddress().isBlank()) {
-            GeocodingService.ReverseGeocodeResult geocoded =
-                    geocodingService.reverseGeocode(request.getLatitude(), request.getLongitude());
-
-            listing.setAddress(geocoded.getAddress());
-            listing.setCity(geocoded.getCity() != null ? geocoded.getCity() : request.getCity());
-            listing.setState(geocoded.getState() != null ? geocoded.getState() : request.getState());
-            listing.setZip(geocoded.getZip() != null ? geocoded.getZip() : request.getZip());
-        } else {
-            listing.setAddress(request.getAddress());
-            listing.setAddressLine2(request.getAddressLine2());
-            listing.setCity(request.getCity());
-            listing.setState(request.getState());
-            listing.setZip(request.getZip());
-        }
-
-        listing.setName(request.getName()); // temporary — no business to lock the name yet
+        listing.setName(request.getName());
         listing.setLatitude(request.getLatitude());
         listing.setLongitude(request.getLongitude());
-        listing.setLocationType(LocationType.GENERAL);
+        listing.setAddress(request.getAddress());
+        listing.setAddressLine2(request.getAddressLine2());
+        listing.setCity(request.getCity());
+        listing.setState(request.getState());
+        listing.setZip(request.getZip());
+        listing.setLocationType(LocationType.BUSINESS);
         listing.setEntityStatus(EntityStatus.ACTIVE);
         listing.setIsActive(true);
-        listing.setHasDistinctName(false); // no business attached — name is temporary
+        listing.setHasDistinctName(true);
 
         return listingRepository.save(listing);
     }
