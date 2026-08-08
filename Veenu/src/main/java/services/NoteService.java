@@ -3,10 +3,13 @@ package services;
 import dtos.CreateNoteRequestDto;
 import dtos.NoteResponseDto;
 import dtos.UpdateNoteRequestDto;
+import jakarta.transaction.Transactional;
 import model.Event;
 import model.Listing;
 import model.Note;
 import model.User;
+import model.enums.AdminEntityType;
+import model.enums.EntityStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import repositories.EventRepository;
@@ -32,17 +35,20 @@ public class NoteService {
     private final ListingRepository listingRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final StatusChangeLogService statusChangeLogService;
 
     public NoteService(
             NoteRepository noteRepository,
             ListingRepository listingRepository,
             EventRepository eventRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            StatusChangeLogService statusChangeLogService
     ) {
         this.noteRepository = noteRepository;
         this.listingRepository = listingRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.statusChangeLogService = statusChangeLogService;
     }
 
     public NoteResponseDto createNote(Long authorUserId, CreateNoteRequestDto request) {
@@ -80,7 +86,8 @@ public class NoteService {
     // public read
     public List<NoteResponseDto> getNotesForListing(Long listingId) {
         return noteRepository.findByListing_Id(listingId).stream()
-                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()))
+                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()) &&
+                        note.getEntityStatus() != EntityStatus.TAKEN_DOWN)
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .map(this::toResponseDto)
                 .toList();
@@ -88,7 +95,8 @@ public class NoteService {
 
     public List<NoteResponseDto> getNotesForEvent(Long eventId) {
         return noteRepository.findByEvent_Id(eventId).stream()
-                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()))
+                .filter(note -> !Boolean.TRUE.equals(note.getOnHold()) &&
+                        note.getEntityStatus() != EntityStatus.TAKEN_DOWN)
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .map(this::toResponseDto)
                 .toList();
@@ -136,6 +144,37 @@ public class NoteService {
 
         Note saved = noteRepository.save(note);
         return toResponseDto(saved);
+    }
+
+    @Transactional
+    public void takeDown(Long noteId, String reason, String adminNotes, Long changedBy) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found"));
+
+        EntityStatus previousStatus = note.getEntityStatus();
+        note.setEntityStatus(EntityStatus.TAKEN_DOWN);
+        note.setSuspensionReason(reason);
+        noteRepository.save(note);
+
+        statusChangeLogService.log(AdminEntityType.NOTE, noteId, previousStatus, EntityStatus.TAKEN_DOWN, reason, adminNotes, changedBy);
+    }
+
+    @Transactional
+    public void overrideTakeDown(Long noteId, String adminNotes, Long changedBy) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found"));
+
+        if (note.getEntityStatus() != EntityStatus.TAKEN_DOWN) {
+            throw new IllegalArgumentException("This note is not currently taken down");
+        }
+
+        EntityStatus previousStatus = note.getEntityStatus();
+        note.setEntityStatus(EntityStatus.ACTIVE);
+        note.setSuspensionReason(null);
+        noteRepository.save(note);
+
+        statusChangeLogService.log(AdminEntityType.NOTE, noteId,
+                previousStatus, EntityStatus.ACTIVE, "Take-down overridden by admin", adminNotes, changedBy);
     }
 
     private boolean containsTriggerWord(String content) {
