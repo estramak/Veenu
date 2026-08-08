@@ -48,4 +48,7 @@ public class CreateBusinessRequestDto {
 
     @NotBlank(message = "Zip is required")
     private String zip;
+
+    // set when the frontend showed nearby-match candidates, null means user said "no match"
+    private Long confirmedListingId;
 }
