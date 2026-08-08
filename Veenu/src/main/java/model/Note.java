@@ -2,6 +2,7 @@ package model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import model.enums.EntityStatus;
 import org.hibernate.annotations.Fetch;
 
 import java.time.LocalDateTime;
@@ -55,4 +56,8 @@ public class Note {
 
     @Column(length = 500)
     private String suspensionReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EntityStatus entityStatus = EntityStatus.ACTIVE;
 }
