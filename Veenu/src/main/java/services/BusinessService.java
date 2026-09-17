@@ -58,7 +58,7 @@ public class BusinessService {
         User creator = userRepository.findById(creatorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (businessRepository.existsByEmail(request.getEmail())) {
+        if (request.getEmail() != null && businessRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("A business with this email already exists");
         }
 
