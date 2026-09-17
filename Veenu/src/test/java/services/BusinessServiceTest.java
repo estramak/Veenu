@@ -1,6 +1,8 @@
 package services;
 
 import dtos.BusinessHoursDto;
+import dtos.BusinessResponseDto;
+import dtos.CreateBusinessRequestDto;
 import dtos.UpdateBusinessRequestDto;
 import model.*;
 import model.enums.BusinessUserRole;
@@ -59,6 +61,139 @@ class BusinessServiceTest {
         owner.setUser(ownerUser);
         owner.setBusiness(business);
         owner.setRole(BusinessUserRole.OWNER);
+    }
+
+    private CreateBusinessRequestDto buildCreateRequest(Long confirmedListingId) {
+        CreateBusinessRequestDto request = new CreateBusinessRequestDto();
+        request.setName("Corner Cafe");
+        request.setEmail("cafe@business.com");
+        request.setPhone("555-1234");
+        request.setWebsite("https://cornercafe.com");
+        request.setLatitude(40.0);
+        request.setLongitude(-73.0);
+        request.setAddress("1 Main St");
+        request.setCity("Springfield");
+        request.setState("NY");
+        request.setZip("10001");
+        request.setConfirmedListingId(confirmedListingId);
+        return request;
+    }
+
+    @Test
+    void createBusiness_creatorNotFound_throwsIllegalArgumentException() {
+        when(userRepository.findById(10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> businessService.createBusiness(10L, buildCreateRequest(null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User not found");
+
+        verifyNoInteractions(businessRepository, listingRepository);
+    }
+
+    @Test
+    void createBusiness_duplicateEmail_throwsIllegalArgumentException() {
+        User creator = new User();
+        creator.setId(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(creator));
+        when(businessRepository.existsByEmail("cafe@business.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> businessService.createBusiness(10L, buildCreateRequest(null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A business with this email already exists");
+
+        verify(businessRepository, never()).save(any(Business.class));
+    }
+
+    @Test
+    void createBusiness_noConfirmedListingId_createNewListing() {
+        User creator = new User();
+        creator.setId(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(creator));
+        when(businessRepository.existsByEmail("cafe@business.com")).thenReturn(false);
+
+        Listing newListing = new Listing();
+        newListing.setId(200L);
+        newListing.setName("Corner Cafe");
+        when(listingRepository.save(any(Listing.class))).thenReturn(newListing);
+
+        Business savedBusiness = new Business();
+        savedBusiness.setId(1L);
+        savedBusiness.setListing(newListing);
+        savedBusiness.setEmail("cafe@business.com");
+        savedBusiness.setEntityStatus(EntityStatus.ACTIVE);
+        savedBusiness.setIsVerified(false);
+        savedBusiness.setFlaggedForReview(false);
+        savedBusiness.setSubmittedBy(creator);
+        when(businessRepository.save(any(Business.class))).thenReturn(savedBusiness);
+
+        BusinessResponseDto response = businessService.createBusiness(10L, buildCreateRequest(null));
+
+        verify(listingRepository).save(argThat(l -> l.getName().equals("Corner Cafe") && l.getLatitude() == 40.0));
+        verify(listingRepository, never()).findById(any());
+        assertThat(response.getListingId()).isEqualTo(200L);
+        assertThat(response.getName()).isEqualTo("Corner Cafe");
+    }
+
+    @Test
+    void createBusiness_confirmedListingNotFound_throwsIllegalArgumentException() {
+        User creator = new User();
+        creator.setId(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(creator));
+        when(businessRepository.existsByEmail("cafe@business.com")).thenReturn(false);
+        when(listingRepository.findById(200L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> businessService.createBusiness(10L, buildCreateRequest(200L)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Confirmed listing not found");
+
+        verify(businessRepository, never()).save(any(Business.class));
+    }
+
+    @Test
+    void createBusiness_confirmedListingAlreadyClaimed_throwsIllegalArgumentException() {
+        User creator = new User();
+        creator.setId(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(creator));
+        when(businessRepository.existsByEmail("cafe@business.com")).thenReturn(false);
+
+        Listing existing = new Listing();
+        existing.setId(200L);
+        when(listingRepository.findById(200L)).thenReturn(Optional.of(existing));
+        when(businessRepository.existsByListingId(200L)).thenReturn(true);
+
+        assertThatThrownBy(() -> businessService.createBusiness(10L, buildCreateRequest(200L)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A business is already registered at this location");
+
+        verify(businessRepository, never()).save(any(Business.class));
+        verify(listingRepository, never()).save(any(Listing.class));
+    }
+
+    @Test
+    void createBusiness_confirmedListingId_happyPath_reusesExistingListing() {
+        User creator = new User();
+        creator.setId(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(creator));
+        when(businessRepository.existsByEmail("cafe@business.com")).thenReturn(false);
+
+        Listing existing = new Listing();
+        existing.setId(200L);
+        existing.setName("Corner Cafe");
+        when(listingRepository.findById(200L)).thenReturn(Optional.of(existing));
+        when(businessRepository.existsByListingId(200L)).thenReturn(false);
+
+        Business savedBusiness = new Business();
+        savedBusiness.setId(1L);
+        savedBusiness.setListing(existing);
+        savedBusiness.setEmail("cafe@business.com");
+        savedBusiness.setEntityStatus(EntityStatus.ACTIVE);
+        when(businessRepository.save(any(Business.class))).thenReturn(savedBusiness);
+
+        BusinessResponseDto response = businessService.createBusiness(10L, buildCreateRequest(200L));
+
+        verify(listingRepository, never()).save(any(Listing.class));
+        assertThat(response.getListingId()).isEqualTo(200L);
+        assertThat(response.getName()).isEqualTo("Corner Cafe");
     }
 
     @Test

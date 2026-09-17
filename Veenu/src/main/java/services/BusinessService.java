@@ -19,14 +19,10 @@ import repositories.BusinessUserRepository;
 import repositories.ListingRepository;
 import repositories.UserRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
 public class BusinessService {
-
-    // Matches Architecture.md / Database_Schema.md proximity threshold
-    private static final double DUPLICATE_LISTING_RADIUS_METERS = 20.0;
 
     // Notification fires once, the moment reports cross this count
     private static final long REPORT_REVIEW_THRESHOLD = 3;
@@ -89,10 +85,6 @@ public class BusinessService {
 
     // finds an existing Listing within the duplicate-detection radius, or creates a new one if this is the first business at this location
     private Listing resolveListing(CreateBusinessRequestDto request) {
-        List<Listing> nearby = listingRepository.findWithinMeters(
-                request.getLatitude(), request.getLongitude(), DUPLICATE_LISTING_RADIUS_METERS
-        );
-
         if (request.getConfirmedListingId() != null) {
             Listing existing = listingRepository
                     .findById(request.getConfirmedListingId())
